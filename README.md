@@ -1,7 +1,7 @@
 
 # text2video GPT
 
-The structure info refer to
+The model structure info refer to
 ![text2video](text2video.pdf)
 
 A PyTorch implementation of text 2 video based on transformers. In order to generate videos, we need encoder and decoder to handle frames in the same hidden space as text. In addition, the transformer will handle the temporal & sequential relationship between frames.
@@ -35,6 +35,10 @@ python train_videogpt.py
 ### Dataset
 And the dataset is the (text, video) pair, which are from UCF101 dataset, email to info@vividitytech.com for download
 
+
+### Samples
+prompt = "a girl with white clothes is doing floor gymnastics exercise from right to left"
+![result video](results3.avi)
 
 ### Library Dependences
 pytorch
