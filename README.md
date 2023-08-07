@@ -1,6 +1,7 @@
 
 # text2video GPT
 
+The structure info refer to
 ![text2video](text2video.pdf)
 
 A PyTorch implementation of text 2 video based on transformers. In order to generate videos, we need encoder and decoder to handle frames in the same hidden space as text. In addition, the transformer will handle the temporal & sequential relationship between frames.
