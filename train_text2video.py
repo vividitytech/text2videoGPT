@@ -28,7 +28,7 @@ def get_config():
     # C.data = TextVideoDataset.get_default_config()
     C.batch_size = 1
     C.num_workers  = 1
-    C.max_iters = 30000
+    C.max_iters = 30000*3
     # model
     C.model = VideoGPT.get_default_config()
     C.model.model_type = 'gpt2'
