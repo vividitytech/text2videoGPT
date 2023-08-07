@@ -31,7 +31,9 @@ A simple version without encoder/decoder
 python train_videogpt.py
 ```
 
-And the dataset is the (text, video) pair, which are from UCF101 dataset
+### Dataset
+And the dataset is the (text, video) pair, which are from UCF101 dataset, email to info@vividitytech.com for download
+
 
 ### Library Dependences
 pytorch
