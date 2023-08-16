@@ -8,8 +8,10 @@ from torchvision import transforms
 
 import transformers
 from transformers import GPT2Tokenizer # , GPT2LMHeadModel,
+from torch.nn import functional as F
 
-from VideoVAEGPT import VideoVAEGPT as VideoGPT
+from VideoUnetGPT import VideoUnetGPT as VideoGPT
+from Unet import Unet
 from VideoData import loadData, getlabels
 from TextVideoDataset import TextVideoDataset
 from mingpt.utils import setup_logging,set_seed, CfgNode as CN
@@ -28,7 +30,7 @@ def get_config():
     # C.data = TextVideoDataset.get_default_config()
     C.batch_size = 1
     C.num_workers  = 1
-    C.max_iters = 30000*3
+    C.max_iters = 30000*2
     # model
     C.model = VideoGPT.get_default_config()
     C.model.model_type = 'gpt2'
@@ -54,7 +56,7 @@ if __name__ == '__main__':
     tokenizer = GPT2Tokenizer.from_pretrained(config.model.model_type)
     # construct the training dataset
     datapath = "/home/gangchen/Downloads/project/datasets/UCF-101"
-    video = loadData(datapath) # don't worry we won't run out of file handles
+    video = loadData(datapath, 32,32) # don't worry we won't run out of file handles
     name2label = getlabels(video)
     transform = transforms.Compose([
         #transforms.RandomHorizontalFlip(p=0.5),
@@ -68,11 +70,23 @@ if __name__ == '__main__':
     config.model.vocab_size = tokenizer.vocab_size
     config.model.block_size = 1024
     config.model.classes = len(name2label)
-    model = VideoGPT(config.model)
+
+
+    unet = Unet(
+        dim = 16,
+        cond_dim = 512,
+        dim_mults = (1, 2,4,8),
+        num_resnet_blocks = 2,
+        layer_attns = (False, False,False,False),
+        layer_cross_attns = (False,False,False, False)
+    )
+
+    model = VideoGPT(config.model, unet)
     
     # checkpoint here
     ckpt_path = os.path.join(config.system.work_dir, "model.pt")
     config.restore = False 
+    config.finetune = False
     if config.restore and os.path.exists(ckpt_path):
         model.load_state_dict(torch.load(ckpt_path))
 
@@ -109,11 +123,16 @@ if __name__ == '__main__':
         x, y, label = batch['query'], batch['answer'], batch['label']
         y = (y - 127.5)/127.5 #normalize it # y/255.0 #
         # forward the model
-        loss, logits, rec_imgs = model(x, y, label, torch.tensor(config.model.noise_schedule,dtype=torch.float32).to(device))
+        if config.finetune:
+            b, t = x.size()   
+            rec_imgs = model.generate(x, max_new_tokens=y.shape[1])
+            loss = F.l1_loss(rec_imgs[:,:-1,:,:,:], y)
+        else:
+            loss, logits, rec_imgs, output = model(x, y, None, torch.tensor(config.model.noise_schedule,dtype=torch.float32).to(device))
 
         # backprop and update the parameters
         model.zero_grad(set_to_none=True)
-        loss.backward()
+        loss.backward(retain_graph=False)
         torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
         optimizer.step()
 
@@ -122,7 +141,14 @@ if __name__ == '__main__':
         tnow = time.time()
         iter_dt = tnow - iter_time
         iter_time = tnow
-
+        '''
+        if iter_num%2==0:
+            rec_loss = F.l1_loss(output[:-1, ...],y[0, 1:, ...],reduction = 'mean')
+            model.zero_grad(set_to_none=True)
+            rec_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
+            optimizer.step()
+        '''
         # save model
         if iter_num%500==0:
             ckpt_path = os.path.join(config.system.work_dir, "model.pt")
