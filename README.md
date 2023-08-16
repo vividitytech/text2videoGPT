@@ -2,7 +2,7 @@
 # text2video GPT
 
 The model structure info refer to
-![text2video](text2video.pdf)
+![text2video](text2video_paper.pdf)
 
 A PyTorch implementation of text 2 video based on transformers. In order to generate videos, we need encoder and decoder to handle frames in the same hidden space as text. In addition, the transformer will handle the temporal & sequential relationship between frames.
 
@@ -63,9 +63,10 @@ Code:
 - [minGPT](https://github.com/karpathy/minGPT.git)
 - [openai/image-gpt](https://github.com/openai/image-gpt) classification part
 - [huggingface/transformers](https://github.com/huggingface/transformers)
+- [imagen-pytorch](https://github.com/lucidrains/imagen-pytorch) for the Unet module
 
 Papers + some implementation notes:
-
+- [A simple text to video model via transformer](text2video_paper.pdf)
 ### License
 
 MIT
